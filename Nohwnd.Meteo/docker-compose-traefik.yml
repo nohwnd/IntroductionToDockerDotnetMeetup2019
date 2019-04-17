@@ -1,0 +1,46 @@
+# cd ~/Dropbox/presentations/dotnet\ meetup\ 2019/introdution\ to\ docker/Nohwnd.Meteo
+# dotnet publish -c Release; docker-compose --file docker-compose-traefik.yml --compatibility up --build
+
+version: '3'
+
+services:
+  traefik:
+    command: '--docker --web --logLevel=DEBUG'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    image: traefik
+    ports:
+      - "80:80"
+      - "8080:8080"
+
+  api:
+    image: nohwnd.meteo.api
+    deploy:
+      replicas: 3
+    build:
+      context: ./Nohwnd.Meteo.Api
+      dockerfile: Dockerfile
+    environment:
+      - "Database:ConnectionString=mongodb://mongo:27017"
+      - "Database:Name=meteo"
+    labels:
+      traefik.backend: 'api'
+      traefik.frontend.rule: 'PathPrefix:/api'
+
+  web:
+    image: nohwnd.meteo.web
+    build:
+      context: ./Nohwnd.Meteo.Web
+      dockerfile: Dockerfile
+    environment:
+      - "Services:Api=http://0.0.0.0"
+    labels:
+      traefik.backend: 'web'
+      traefik.frontend.rule: 'PathPrefix:/'
+
+  mongo:
+    image: mongo:3.6
+    volumes:
+      - ~/docker/volumes/meteo/mongo:/data
+    labels:
+      traefik.enable: 'false'

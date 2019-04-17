@@ -1,0 +1,33 @@
+# cd ~/Dropbox/presentations/dotnet\ meetup\ 2019/introdution\ to\ docker/Nohwnd.Meteo
+# dotnet publish -c Release;  docker-compose --file docker-compose.yml up --build
+
+version: '3'
+
+services:
+  nohwnd.meteo.api:
+    image: nohwnd.meteo.api
+    build:
+      context: ./Nohwnd.Meteo.Api
+      dockerfile: Dockerfile
+    ports:
+      - "7001:80"
+    environment:
+      - "Database:ConnectionString=mongodb://mongo:27017"
+      - "Database:Name=meteo"
+
+  nohwnd.meteo.web:
+    image: nohwnd.meteo.web
+    build:
+      context: ./Nohwnd.Meteo.Web
+      dockerfile: Dockerfile
+    ports:
+      - "7002:80"
+    environment:
+      - "Services:Api=http://localhost:7001"
+
+  mongo:
+    image: mongo:3.6
+    ports:
+      - "27018:27017"
+    volumes:
+      - ~/docker/volumes/meteo/mongo:/data

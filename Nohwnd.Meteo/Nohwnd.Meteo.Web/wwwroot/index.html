@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/foundation/6.2.4/foundation.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/foundation/6.2.4/foundation.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.1/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.3.4"></script>
+    <link rel="stylesheet" href="css/weather-icons.css">
+</head>
+
+<body>
+    <div id="app">
+        <div class="row">
+            <div class="text-center">
+                <h1>Weather in {{city}}</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="large-12 column-center text-center">
+                <i v-bind:class="iconClassObject" class="wi" style="font-size: 120px" v-if="weather"></i>
+            </div>
+        </div>
+        <div class="row">
+            <div class="large-3 column-center text-center">
+                <select v-model="city" v-on:change='get(city)'>
+                    <option v-for="c in cities">{{ c }}</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                apiUrl: '',
+
+                city: 'n/a',
+                weather: '',
+                cities: []
+            },
+            created: function () {
+
+                this.$http.get('discovery.json').then(response => {
+                    console.log(response);
+                    this.apiUrl = response.body.api;
+
+                    this.$http.get(this.apiUrl + '/api/weather').then(response => {
+                        // console.log(response);
+                        this.city = response.body[0].city;
+                        this.weather = response.body[0].weatherType;
+                        this.cities = response.body.map(c => c.city);
+                    });
+                });
+            },
+            computed: {
+                iconClassObject: function () {
+                    return {
+                        'wi-day-sunny': this.weather === "Sunny",
+                        'wi-day-rain': this.weather === "Rainy"
+                    }
+                }
+            },
+            methods: {
+                get: function (city) {
+                    if (!city) {
+                        city = 'prague';
+                    }
+                    this.$http.get(this.apiUrl + '/api/weather/' + city).then(response => {
+                        // console.log(response);
+                        this.city = response.body.city;
+                        this.weather = response.body.weatherType;
+                    }, response => {
+                        console.log('error');
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
